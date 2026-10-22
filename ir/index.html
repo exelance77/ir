@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spoonerism Ultimate Challenge</title>
+    <style>
+        body { background-color: #1E1E1E; color: #FFFFFF; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .container { background: #2D2D2D; padding: 25px; border-radius: 12px; width: 90%; max-width: 450px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); text-align: center; }
+        input, select, button { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #444; background: #3C3C3C; color: #fff; font-size: 16px; box-sizing: border-box; }
+        button { background: #27AE60; font-weight: bold; cursor: pointer; border: none; }
+        button:hover { background: #219653; }
+        .clue { font-size: 24px; font-weight: bold; color: #5DADE2; margin: 20px 0; }
+        .info { display: flex; justify-content: space-between; color: #AAAAAA; font-size: 14px; margin-bottom: 15px; }
+        .feedback { font-weight: bold; margin: 10px 0; min-height: 24px; }
+        .desc { font-style: italic; color: #F1C40F; font-size: 13px; margin: 10px 0; }
+        .hidden { display: none; }
+        .list-item { text-align: left; padding: 6px; border-bottom: 1px solid #444; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+<div class="container" id="screen-login">
+    <h2>SPOONERISM CHALLENGE</h2>
+    <input type="text" id="player-name" placeholder="Oyuncu Adınızı Girin..." maxlength="20">
+    <select id="player-emoji">
+        <option value="😎">😎 Cool</option><option value="🚀">🚀 Roket</option><option value="🦊">🦊 Tilki</option>
+        <option value="🦁">🦁 Aslan</option><option value="🤖">🤖 Robot</option><option value="👑">👑 Kral</option>
+        <option value="🔥">🔥 Ateş</option><option value="⚡">⚡ Yıldız</option><option value="💎">💎 Elmas</option>
+    </select>
+    <button onclick="startGame()">OYUNA BAŞLA</button>
+</div>
+
+<div class="container hidden" id="screen-game">
+    <div class="info">
+        <span id="q-info">Soru: 1/20</span>
+        <span id="timer-info" style="color: #2ECC71; font-weight: bold;">Süre: 00:00</span>
+    </div>
+    <div class="clue" id="clue-text"></div>
+    <input type="text" id="user-answer" placeholder="Doğrusu nedir?" autocomplete="off" autocapitalize="off">
+    <button onclick="checkAnswer()">Cevapla / Geç ➔</button>
+    <div class="feedback" id="feedback-text"></div>
+    <div class="desc" id="desc-text"></div>
+</div>
+
+<div class="container hidden" id="screen-leaderboard">
+    <h2>🏆 LİDERLİK TABLOSU 🏆</h2>
+    <div id="result-summary" style="margin-bottom: 15px; color: #AAAAAA; font-size: 13px;"></div>
+    <div id="leaderboard-list" style="max-height: 250px; overflow-y: auto; margin-bottom: 15px;"></div>
+    <button onclick="location.reload()" style="background: #3498DB;">YENİ OYUNCU İLE BAŞLA</button>
+</div>
+
+<script>
+const questionsPool = [
+    {clue: "Relational Internations", ans: "International Relations", desc: "Uluslararası İlişkiler (Akademik Disiplin)"},
+    {clue: "Poreign Folicy", ans: "Foreign Policy", desc: "Dış Politika"},
+    {clue: "Polinational Intertics", "ans": "International Politics", desc: "Uluslararası Siyaset"},
+    {clue: "Porld Wolitics", ans: "World Politics", desc: "Dünya Siyaseti"},
+    {clue: "Miplodacy", ans: "Diplomacy", desc: "Diplomasi"},
+    {clue: "Lipdomat", ans: "Diplomat", desc: "Diplomat"},
+    {clue: "Bemassy", ans: "Embassy", desc: "Büyükelçilik"},
+    {clue: "Intional Naterest", ans: "National Interest", desc: "Ulusal Çıkar"},
+    {clue: "Sational Necurity", ans: "National Security", desc: "Ulusal Güvenlik"},
+    {clue: "Roveseignty", ans: "Sovereignty", desc: "Egemenlik"},
+    {clue: "Station Nate", ans: "Nation State", desc: "Ulus Devlet"},
+    {clue: "Scitical Polience", ans: "Political Science", desc: "Siyaset Bilimi"},
+    {clue: "Powitical Poler", ans: "Political Power", desc: "Siyasi Güç / İktidar"},
+    {clue: "Natited Unions", ans: "United Nations", desc: "Birleşmiş Milletler (BM)"},
+    {clue: "Stated Unites", ans: "United States", desc: "Amerika Birleşik Devletleri (ABD)"},
+    {clue: "Upean Euronion", ans: "European Union", desc: "Avrupa Birliği (AB)"},
+    {clue: "Ana Tolliance", ans: "NATO Alliance", desc: "Kuzey Atlantik Antlaşması Örgütü"},
+    {clue: "Cecurity Souncil", ans: "Security Council", desc: "Güvenlik Konseyi"},
+    {clue: "Borld Wank", ans: "World Bank", desc: "Dünya Bankası"},
+    {clue: "Orld Wrade Torganization", ans: "World Trade Organization", desc: "Dünya Ticaret Örgütü (DTÖ)"},
+    {clue: "Powt Sofer", ans: "Soft Power", desc: "Yumuşak Güç"},
+    {clue: "Pard Hower", ans: "Hard Power", desc: "Sert Güç"},
+    {clue: "Wold Car", ans: "Cold War", desc: "Soğuk Savaş"},
+    {clue: "Wivil Car", ans: "Civil War", desc: "İç Savaş"},
+    {clue: "Treace Peaty", ans: "Peace Treaty", desc: "Barış Antlaşması"},
+    {clue: "Ruman Hights", ans: "Human Rights", desc: "İnsan Hakları"},
+    {clue: "Tree Frade", ans: "Free Trade", desc: "Serbest Ticaret"},
+    {clue: "Relitical Poalism", ans: "Political Realism", desc: "Siyasi Realizm (Gerçekçilik)"},
+    {clue: "Tanionalism", ans: "Nationalism", desc: "Milliyetçilik"},
+    {clue: "Tapicalism", ans: "Capitalism", desc: "Kapitalizm"},
+    {clue: "Mustafa Kemal Atatürk", ans: "Mustafa Kemal Atatürk", desc: "❤️(1881-193∞)🤍"},
+    {clue: "Bapoleon Nonaparte", ans: "Napoleon Bonaparte", desc: "Fransız İmparatoru (1769–1821)"},
+    {clue: "Hadolf Itler", ans: "Adolf Hitler", desc: "Nazi Almanyası Lideri (1889–1945)"},
+    {clue: "Miccolo Nachiavelli", ans: "Niccolo Machiavelli", desc: "İtalyan Siyaset Filozofu (1469–1527)"}
+];
+
+let currentQuestions = [], currentIndex = 0, correctCount = 0;
+let playerName = "", playerEmoji = "😎";
+let startTime = 0, timerInterval = null, elapsedSeconds = 0;
+
+function normalize(text) {
+    return text.toLowerCase().replace(/[\s\-]/g, '');
+}
+
+function startGame() {
+    const nameInput = document.getElementById("player-name").value.trim();
+    if (!nameInput) { alert("Lütfen adınızı girin!"); return; }
+    
+    playerName = nameInput;
+    playerEmoji = document.getElementById("player-emoji").value;
+    
+    currentQuestions = [...questionsPool].sort(() => 0.5 - Math.random()).slice(0, 20);
+    currentIndex = 0;
+    correctCount = 0;
+    elapsedSeconds = 0;
+    
+    document.getElementById("screen-login").classList.add("hidden");
+    document.getElementById("screen-game").classList.remove("hidden");
+    
+    startTime = Date.now();
+    timerInterval = setInterval(() => {
+        elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
+        let m = String(Math.floor(elapsedSeconds / 60)).padStart(2, '0');
+        let s = String(elapsedSeconds % 60).padStart(2, '0');
+        document.getElementById("timer-info").innerText = `Süre: ${m}:${s}`;
+    }, 1000);
+
+    loadQuestion();
+    
+    // Klavyeden Enter'a basınca direkt cevaplasın
+    document.getElementById("user-answer").addEventListener("keypress", function(event) {
+        if (event.key === "Enter") {
+            checkAnswer();
+        }
+    });
+}
+
+function loadQuestion() {
+    if (currentIndex >= currentQuestions.length) {
+        endGame();
+        return;
+    }
+    document.getElementById("q-info").innerText = `Soru: ${currentIndex + 1}/20 | Doğru: ${correctCount}`;
+    document.getElementById("clue-text").innerText = `👉 ${currentQuestions[currentIndex].clue} 👈`;
+    document.getElementById("user-answer").value = "";
+    document.getElementById("feedback-text").innerText = "";
+    document.getElementById("desc-text").innerText = "";
+    document.getElementById("user-answer").focus();
+}
+
+function checkAnswer() {
+    const userAns = document.getElementById("user-answer").value.trim();
+    if (!userAns) return;
+    
+    const q = currentQuestions[currentIndex];
+    if (normalize(userAns) === normalize(q.ans)) {
+        correctCount++;
+        document.getElementById("feedback-text").innerHTML = `<span style="color: #2ECC71;">✓ DOĞRU! (${q.ans})</span>`;
+    } else {
+        document.getElementById("feedback-text").innerHTML = `<span style="color: #E74C3C;">✗ YANLIŞ! Doğrusu: ${q.ans}</span>`;
+    }
+    document.getElementById("desc-text").innerText = `📖 ${q.desc}`;
+    
+    currentIndex++;
+    setTimeout(() => {
+        loadQuestion();
+    }, 1200); // 1.2 saniye bekleyip otomatik sonraki soruya geçer
+}
+
+function endGame() {
+    clearInterval(timerInterval);
+    document.getElementById("screen-game").classList.add("hidden");
+    document.getElementById("screen-leaderboard").classList.remove("hidden");
+    
+    let baseScore = correctCount * 50;
+    let timeBonus = correctCount > 0 ? Math.max(0, 150 - elapsedSeconds) : 0;
+    let totalScore = baseScore + timeBonus;
+    
+    let m = String(Math.floor(elapsedSeconds / 60)).padStart(2, '0');
+    let s = String(elapsedSeconds % 60).padStart(2, '0');
+    
+    document.getElementById("result-summary").innerText = `Süre: ${m}:${s} | Doğru: ${correctCount}/20 | Puan: ${baseScore} + Hız: ${timeBonus}`;
+    
+    let lb = JSON.parse(localStorage.getItem("spoonerism_lb") || "[]");
+    lb.push({name: playerName, emoji: playerEmoji, score: totalScore, correct: correctCount, time: `${m}:${s}`});
+    lb.sort((a, b) => b.score - a.score);
+    localStorage.setItem("spoonerism_lb", JSON.stringify(lb));
+    
+    let listHTML = "";
+    lb.slice(0, 10).forEach((entry, idx) => {
+        let rank = idx + 1;
+        let color = rank === 1 ? "#FFD700" : (rank === 2 ? "#C0C0C0" : (rank === 3 ? "#CD7F32" : "#FFF"));
+        listHTML += `<div class="list-item" style="color: ${color};"><b>${rank}.</b> ${entry.emoji} ${entry.name} — <b>${entry.score} Puan</b> (${entry.correct}/20, ${entry.time})</div>`;
+    });
+    document.getElementById("leaderboard-list").innerHTML = listHTML;
+}
+</script>
+
+</body>
+</html>
